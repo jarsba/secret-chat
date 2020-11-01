@@ -10,3 +10,8 @@ Keskustelusovellus 2020 II-periodin Tietokantasovellus-kurssille
 - Käyttäjä voi luoda uusia keskusteluhuoneita
 - Käyttäjä voi lähettää ja poistaa omia viestejään
 - Käyttäjä voi etsiä viestejä
+
+#### Lisätoiminnallisuudet
+
+- Kaikki viestit ovat salattuja ja selain toteuttaa salausavaimien vaihdon ja uusinnan automaattisesti
+- Viestit tulevat realiajassa Websocketien yli
