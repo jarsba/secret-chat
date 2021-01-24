@@ -1,6 +1,6 @@
 # secret-chat
 
-Keskustelusovellus 2020 II-periodin Tietokantasovellus-kurssille
+Keskustelusovellus 2021 III-periodin Tietokantasovellus-kurssille
 
 #### Keskeiset toiminnallisuudet
 
