@@ -1,5 +1,7 @@
 # secret-chat
 
+_Sovellusta ei voi vielä testata Herokussa_
+
 Keskustelusovellus 2021 III-periodin Tietokantasovellus-kurssille
 
 #### Keskeiset toiminnallisuudet
