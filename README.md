@@ -1,5 +1,7 @@
 # secret-chat
 
+_Sovellusta ei voi vielä testata Herokussa_
+
 Keskustelusovellus 2021 III-periodin Tietokantasovellus-kurssille
 
 #### Keskeiset toiminnallisuudet
@@ -11,7 +13,7 @@ Keskustelusovellus 2021 III-periodin Tietokantasovellus-kurssille
 - Käyttäjä voi lähettää ja poistaa omia viestejään
 - Käyttäjä voi etsiä viestejä
 
-#### Lisätoiminnallisuudet
+#### (Lisätoiminnallisuudet)
 
 - Kaikki viestit ovat salattuja ja selain toteuttaa salausavaimien vaihdon ja uusinnan automaattisesti
 - Viestit tulevat realiajassa Websocketien yli
