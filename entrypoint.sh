@@ -1,16 +1,14 @@
 #!/bin/sh
 
-if [ "$DATABASE" = "postgres" ]
-then
-    echo "Waiting for postgres..."
+echo "Waiting for postgres..."
 
-    while ! nc -z $SQL_HOST $SQL_PORT; do
-      sleep 0.1
-    done
+while ! nc -z $SC_DB_URL $SC_DB_PORT; do
+  echo "Waiting for postgres..."
+  sleep 3
+done
 
-    echo "PostgreSQL started"
-fi
+echo "PostgreSQL started"
 
-FLASK_APP=main.py flask run
+FLASK_APP=main.py flask run --host 0.0.0.0
 
 exec "$@"

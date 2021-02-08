@@ -1,8 +1,8 @@
 from main import db
 
-from models.user import User
-from models.message import Message
 from models.chat_room import ChatRoom
+from models.message import Message
+from models.user import User
 
 import logging
 
@@ -39,9 +39,9 @@ db.session.commit()
 
 logger.info(f'Creating messages')
 
-message1 = Message(user=admin.id, content='admin message', room=room1.id)
-message2 = Message(user=user1.id, content='user1 message', room=room1.id)
-message3 = Message(user=user2.id, content='user2 message', room=room2.id)
+message1 = Message(user_id=admin.id, content='admin message', room=room1.id)
+message2 = Message(user_id=user1.id, content='user1 message', room=room1.id)
+message3 = Message(user_id=user2.id, content='user2 message', room=room2.id)
 
 db.session.add(message1)
 db.session.add(message2)

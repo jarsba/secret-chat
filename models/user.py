@@ -4,13 +4,14 @@ import os
 
 db = SQLAlchemy()
 
+
 class User(db.Model):
     __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String)
     username = db.Column(db.String)
     password = db.Column(db.String)
-    messages = db.relationship('Message', backref='user', lazy=True)
+    messages = db.relationship('Message', back_populates='user', lazy=True)
 
     def __init__(self, username, email, password):
         self.username = username

@@ -7,8 +7,14 @@ from dotenv import load_dotenv
 from werkzeug.middleware.dispatcher import DispatcherMiddleware
 from werkzeug.wrappers import Response
 from flask_jwt import JWT, jwt_required, current_identity
+from flask_bcrypt import generate_password_hash
+
 from flask_bcrypt import Bcrypt
 import auth
+from models.user import User
+from models.chat_room import ChatRoom
+from models.message import Message
+
 import logging
 
 FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -24,8 +30,19 @@ app.debug = os.getenv('FLASK_ENV') != 'production'
 
 # DB
 
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-app.config["SC_DB_URL"] = os.getenv('SC_DB_URL')
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = True
+app.config['SQLALCHEMY_ECHO'] = True
+
+db_url = os.getenv('SC_DB_URL')
+db_port = os.getenv('SC_DB_PORT')
+db_name = os.getenv('SC_DB_NAME')
+db_user = os.getenv('SC_DB_USER')
+db_password = os.getenv('SC_DB_PASSWORD')
+
+db_connection_url = f"postgres://{db_user}:{db_password}@{db_url}:{db_port}/{db_name}"
+
+app.config['SQLALCHEMY_DATABASE_URI'] = db_connection_url
+
 db = SQLAlchemy(app)
 
 # JWT
@@ -43,7 +60,7 @@ app.wsgi_app = DispatcherMiddleware(
 )
 
 
-def render_response(data, status_code=200, message=""):
+def render_response(data="", status_code=200, message=""):
     return jsonify({
         'data': data,
         'status_code': status_code,
@@ -51,9 +68,64 @@ def render_response(data, status_code=200, message=""):
     })
 
 
-@app.route("/")
-def index():
-    return render_response("Heipparallaa!")
+
+@app.route("/user", methods=['GET'])
+def get_all_users():
+    users = db.session.query(User).all()
+    return render_response(data=users)
+
+@app.route("/user/<id>", methods=['GET'])
+def get_user(id):
+    user = db.session.query(User).filter(User.id == id).one()
+    return render_response(data=user)
+
+
+@app.route("/user", methods=['POST'])
+def create_user():
+    request_data = request.get_json()
+
+    email = request_data['email']
+    username = request_data['username']
+    password = request_data['password']
+
+    new_user = User(email=email, username=username, password=password)
+    db.session.add(new_user)
+    db.session.commit()
+    return render_response(data=new_user)
+
+
+@app.route("/user/<id>", methods=['DELETE'])
+def delete_user(id):
+    user = db.session.query(User).filter(User.id == id).one()
+    db.session.delete(user)
+    db.session.commit()
+
+    return render_response()
+
+
+@app.route("/user/<id>", methods=['PUT'])
+def update_user(id):
+    request_data = request.get_json()
+
+    email = request_data['email']
+    username = request_data['username']
+    password = request_data['password']
+
+    user = db.session.query(User).filter(User.id == id).one()
+
+    if email:
+        user.email = email
+    if username:
+        user.username = username
+    if password:
+        user.password = generate_password_hash(
+            password, os.getenv('SC_BCRYPT_LOG_ROUNDS')
+        ).decode()
+
+    db.session.add(user)
+    db.session.commit()
+
+    return render_response(data=user)
 
 
 @app.route("/secret")
@@ -65,4 +137,5 @@ def secret():
 if __name__ == '__main__':
     load_dotenv()
     debug = os.getenv('FLASK_ENV') != 'production'
-    app.run('0.0.0.0', 5000, debug=debug)
+    port = os.getenv('SC_FLASK_PORT')
+    app.run('0.0.0.0', port, debug=debug)
