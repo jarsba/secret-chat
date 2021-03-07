@@ -83,19 +83,10 @@ def render_response(data="", status_code=200, message=""):
     })
 
 
-print(app.url_map)
-
-
 # For React
 @app.route('/')
 def index():
     return app.send_static_file('index.html')
-
-
-@app.route('/<path:path>')
-def static_file(path):
-    return app.send_static_file(path)
-
 
 @app.route(f"{PATH_PREFIX}/user", methods=['GET'])
 @jwt_required()
@@ -280,6 +271,11 @@ def secret():
     return render_response("Secret!")
 
 
+@app.route('/<path:path>')
+def static_file(path):
+    return app.send_static_file(path)
+
+
 @app.errorhandler(404)
 def not_found(e):
     return app.send_static_file('index.html')
@@ -289,5 +285,4 @@ if __name__ == '__main__':
     load_dotenv()
     debug = os.getenv('FLASK_ENV') != 'production'
     port = os.getenv('SC_FLASK_PORT')
-    print(app.url_map)
     app.run('0.0.0.0', port, debug=debug)
