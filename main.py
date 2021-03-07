@@ -87,11 +87,17 @@ print(app.url_map)
 
 
 # For React
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
+@app.route('/')
 def index(path):
     return app.send_static_file('index.html')
 
+@app.route('/<a>')
+def index(a):
+    return app.send_static_file('index.html')
+
+@app.route('/<path:path>')
+def static_file(path):
+    return app.send_static_file(path)
 
 @app.route(f"{PATH_PREFIX}/user", methods=['GET'])
 @jwt_required()
