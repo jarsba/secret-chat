@@ -87,10 +87,6 @@ print(app.url_map)
 
 
 # For React
-@app.route('/')
-def index(path):
-    return app.send_static_file('index.html')
-
 @app.route('/<a>')
 def index(a):
     return app.send_static_file('index.html')
