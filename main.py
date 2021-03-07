@@ -97,6 +97,11 @@ def index_2(a):
     return app.send_static_file('index.html')
 
 
+@app.route('')
+def index_3():
+    return app.send_static_file('index.html')
+
+
 @app.route('/<path:path>')
 def static_file(path):
     return app.send_static_file(path)
