@@ -1,7 +1,9 @@
 # secret-chat
 
 __Heroku-linkki: https://jakki-secret-chat.herokuapp.com/__
+
 __Front-end: https://github.com/jarsba/secret-chat-ui__
+
 Keskustelusovellus 2021 III-periodin Tietokantasovellus-kurssille
 
 #### Keskeiset toiminnallisuudet
