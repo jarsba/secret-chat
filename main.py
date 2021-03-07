@@ -32,7 +32,7 @@ PATH_PREFIX = '/api'
 
 # APP
 
-app = Flask(__name__, static_folder='build', static_url_path='/')
+app = Flask(__name__, static_folder='../build', static_url_path='/')
 
 CORS(app)
 app.debug = os.getenv('FLASK_ENV') != 'production'
