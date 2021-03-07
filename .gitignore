@@ -130,3 +130,5 @@ dmypy.json
 
 # Postgres data
 postgres_data
+
+!build/.gitkeep
