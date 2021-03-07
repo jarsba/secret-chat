@@ -1,19 +1,22 @@
 from auth import authenticate, identity
 import os
+import sqlalchemy
+from sqlalchemy.orm import sessionmaker
 from flask import Flask, url_for, jsonify
 from flask import redirect, render_template, request
-from flask_sqlalchemy import SQLAlchemy
+from flask_cors import CORS, cross_origin
 from dotenv import load_dotenv
 from werkzeug.middleware.dispatcher import DispatcherMiddleware
 from werkzeug.wrappers import Response
 from flask_jwt import JWT, jwt_required, current_identity
 from flask_bcrypt import generate_password_hash
-
 from flask_bcrypt import Bcrypt
-import auth
-from models.user import User
-from models.chat_room import ChatRoom
-from models.message import Message
+from datetime import timedelta
+
+
+from models import User
+from models import ChatRoom
+from models import Message
 
 import logging
 
@@ -26,6 +29,7 @@ load_dotenv()
 # APP
 
 app = Flask(__name__)
+CORS(app)
 app.debug = os.getenv('FLASK_ENV') != 'production'
 
 # DB
@@ -43,13 +47,24 @@ db_connection_url = f"postgres://{db_user}:{db_password}@{db_url}:{db_port}/{db_
 
 app.config['SQLALCHEMY_DATABASE_URI'] = db_connection_url
 
-db = SQLAlchemy(app)
+db = sqlalchemy.create_engine(
+    sqlalchemy.engine.url.URL(
+        drivername="postgresql",
+        host=db_url,
+        port=db_port,
+        username=db_user,
+        password=db_password,
+        database=db_name,
+    ),
+)
+
+Session = sessionmaker(bind=db)
 
 # JWT
 
-app.config["SC_SECRET_KEY"] = os.getenv("SECRET_KEY")
+app.config["SECRET_KEY"] = os.getenv("SC_SECRET_KEY")
 app.config["JWT_AUTH_URL_RULE"] = "/login"
-
+app.config["JWT_EXPIRATION_DELTA"] = timedelta(seconds=21600)
 bcrypt = Bcrypt(app)
 
 jwt = JWT(app, authenticate, identity)
@@ -68,20 +83,30 @@ def render_response(data="", status_code=200, message=""):
     })
 
 
-
 @app.route("/user", methods=['GET'])
+@jwt_required()
 def get_all_users():
-    users = db.session.query(User).all()
+    logger.info("Get all users")
+    session = Session()
+    users = session.query(User).all()
     return render_response(data=users)
 
+
 @app.route("/user/<id>", methods=['GET'])
+@jwt_required()
 def get_user(id):
-    user = db.session.query(User).filter(User.id == id).one()
+    logger.info("Get a user")
+    session = Session()
+    user = session.query(User).filter(User.id == id).one()
     return render_response(data=user)
 
 
 @app.route("/user", methods=['POST'])
+@jwt_required()
 def create_user():
+    logger.info("Create a user")
+    session = Session()
+
     request_data = request.get_json()
 
     email = request_data['email']
@@ -89,29 +114,36 @@ def create_user():
     password = request_data['password']
 
     new_user = User(email=email, username=username, password=password)
-    db.session.add(new_user)
-    db.session.commit()
+    session.add(new_user)
+    session.commit()
     return render_response(data=new_user)
 
 
 @app.route("/user/<id>", methods=['DELETE'])
+@jwt_required()
 def delete_user(id):
-    user = db.session.query(User).filter(User.id == id).one()
-    db.session.delete(user)
-    db.session.commit()
+    logger.info("Delete a user")
+    session = Session()
+
+    user = session.query(User).filter(User.id == id).one()
+    session.delete(user)
+    session.commit()
 
     return render_response()
 
-
 @app.route("/user/<id>", methods=['PUT'])
+@jwt_required()
 def update_user(id):
+    logger.info("Update a user")
+    session = Session()
+
     request_data = request.get_json()
 
     email = request_data['email']
     username = request_data['username']
     password = request_data['password']
 
-    user = db.session.query(User).filter(User.id == id).one()
+    user = session.query(User).filter(User.id == id).one()
 
     if email:
         user.email = email
@@ -122,17 +154,111 @@ def update_user(id):
             password, os.getenv('SC_BCRYPT_LOG_ROUNDS')
         ).decode()
 
-    db.session.add(user)
-    db.session.commit()
+    session.add(user)
+    session.commit()
 
     return render_response(data=user)
+
+
+@app.route("/chatroom", methods=['GET'])
+@jwt_required()
+def get_all_chatrooms():
+    logger.info("Get all chatrooms")
+    session = Session()
+    chatrooms = session.query(ChatRoom).all()
+    return render_response(data=chatrooms)
+
+
+@app.route("/chatroom/<id>", methods=['GET'])
+@jwt_required()
+def get_chatroom(id):
+    logger.info("Get a chatroom")
+    session = Session()
+    chatroom = session.query(ChatRoom).filter(ChatRoom.id == id).one()
+    return render_response(data=chatroom)
+
+
+@app.route("/chatroom", methods=['POST'])
+@jwt_required()
+def create_chatroom():
+    logger.info("Create a chatroom")
+    session = Session()
+    request_data = request.get_json()
+    name = request_data['name']
+    new_room = ChatRoom(name=name)
+    session.add(new_room)
+    session.commit()
+    return render_response(data=new_room)
+
+
+@app.route("/chatroom/<id>", methods=['DELETE'])
+@jwt_required()
+def delete_room(id):
+    logger.info("Delete a chatroom")
+    session = Session()
+
+    chatroom = session.query(ChatRoom).filter(ChatRoom.id == id).one()
+    session.delete(chatroom)
+    session.commit()
+
+    return render_response()
+
+@app.route("/message", methods=['GET'])
+@jwt_required()
+def get_all_messages():
+    logger.info("Get all messages")
+    session = Session()
+    messages = session.query(Message).all()
+    return render_response(data=messages)
+
+
+@app.route("/message/chatroom/<id>", methods=['GET'])
+@jwt_required(id)
+def get_all_messages_from_chatroom(id):
+    logger.info("Get all messages from specific chatroom")
+    session = Session()
+    messages = session.query(Message).filter(ChatRoom.id == id).all()
+    return render_response(data=messages)
+
+@app.route("/message/user/<id>", methods=['GET'])
+@jwt_required(id)
+def get_all_messages_from_user(id):
+    logger.info("Get all messages from specific user")
+    session = Session()
+    messages = session.query(Message).filter(User.id == id).all()
+    return render_response(data=messages)
+
+@app.route("/message/<id>", methods=['GET'])
+@jwt_required()
+def get_message(id):
+    logger.info("Get a message")
+    session = Session()
+    message = session.query(Message).filter(Message.id == id).one()
+    return render_response(data=message)
+
+@app.route("/message", methods=['POST'])
+@jwt_required()
+def create_message():
+    logger.info("Create a message")
+    session = Session()
+
+    request_data = request.get_json()
+
+    user_id = request_data['user_id']
+    content = request_data['content']
+    room_id = request_data['room_id']
+    recipient_id = request_data['recipient_id']
+
+    new_message = Message(user_id=user_id, content=content, room_id=room_id, recipient_id=recipient_id)
+    session.add(new_message)
+    session.commit()
+    return render_response(data=new_message)
 
 
 @app.route("/secret")
 @jwt_required()
 def secret():
     return render_response("Secret!")
-
 
 if __name__ == '__main__':
     load_dotenv()
