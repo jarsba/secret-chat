@@ -1,6 +1,6 @@
 # secret-chat
 
-__Heroku-linkki: https://jakki-secret-chat.herokuapp.com/__
+__Heroku-linkki: https://jakki-secret-chat.herokuapp.com/__, käyttäjä user1, salasana user1 
 
 __Front-end: https://github.com/jarsba/secret-chat-ui__
 
