@@ -32,7 +32,7 @@ PATH_PREFIX = '/api'
 
 # APP
 
-app = Flask(__name__, static_folder='build', static_url_path='/')
+app = Flask(__name__, static_folder='build', static_url_path='')
 
 CORS(app)
 app.debug = os.getenv('FLASK_ENV') != 'production'
@@ -92,9 +92,9 @@ def index():
     return app.send_static_file('index.html')
 
 
-@app.route('/favicon.ico', methods=["GET"])
-def favicon():
-    return app.send_static_file('favicon.ico')
+@app.route('/<path:path>')
+def static_file(path):
+    return app.send_static_file(path)
 
 
 @app.route(f"{PATH_PREFIX}/user", methods=['GET'])
