@@ -1,6 +1,6 @@
 # secret-chat
 
-_Sovellusta ei voi vielä testata Herokussa_
+__Heroku-linkki: https://jakki-secret-chat.herokuapp.com/__
 
 Keskustelusovellus 2021 III-periodin Tietokantasovellus-kurssille
 
