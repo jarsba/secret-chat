@@ -1,6 +1,5 @@
 import os
-from datetime import datetime
-from datetime import timezone
+from datetime import datetime, timezone
 from flask_bcrypt import generate_password_hash
 from dataclasses import dataclass
 from sqlalchemy.ext.declarative import declarative_base
@@ -53,6 +52,16 @@ class Message(Base):
     recipient_id: int = Column(Integer, ForeignKey('user.id'),
                                nullable=True)
     recipient = relationship('User', foreign_keys=[recipient_id])
+
+    def __init__(self, user_id, content, room_id, recipient_id, created_at=datetime.now(timezone.utc),
+                 updated_at=datetime.now(timezone.utc)):
+        self.created_at = created_at
+        self.updated_at = updated_at
+        self.user_id = user_id
+        self.content = content
+        self.room_id = room_id
+        self.recipient_id = recipient_id
+
 
 @dataclass
 class User(Base):

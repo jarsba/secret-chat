@@ -1,7 +1,9 @@
 from auth import authenticate, identity
 import os
+from datetime import timezone, datetime
 import sqlalchemy
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import or_, and_
+from sqlalchemy.orm import sessionmaker, scoped_session
 from flask import Flask, url_for, jsonify, Blueprint
 from flask import redirect, render_template, request, send_from_directory
 from flask_cors import CORS, cross_origin
@@ -61,9 +63,11 @@ db = sqlalchemy.create_engine(
         password=db_password,
         database=db_name,
     ),
+    pool_size=30,
+    max_overflow=0
 )
 
-Session = sessionmaker(bind=db)
+Session = scoped_session(sessionmaker(bind=db, autocommit=False, autoflush=False))
 
 # JWT
 
@@ -87,6 +91,7 @@ def render_response(data="", status_code=200, message=""):
 @app.route('/')
 def index():
     return app.send_static_file('index.html')
+
 
 @app.route(f"{PATH_PREFIX}/user", methods=['GET'])
 @jwt_required()
@@ -133,7 +138,6 @@ def delete_user(id):
     user = session.query(User).filter(User.id == id).one()
     session.delete(user)
     session.commit()
-
     return render_response()
 
 
@@ -162,7 +166,6 @@ def update_user(id):
 
     session.add(user)
     session.commit()
-
     return render_response(data=user)
 
 
@@ -177,7 +180,7 @@ def get_all_chatrooms():
 
 @app.route(f"{PATH_PREFIX}/chatroom/<id>", methods=['GET'])
 @jwt_required()
-def get_chatroom(id):
+def get_chatroom():
     logger.info("Get a chatroom")
     session = Session()
     chatroom = session.query(ChatRoom).filter(ChatRoom.id == id).one()
@@ -199,7 +202,7 @@ def create_chatroom():
 
 @app.route(f"{PATH_PREFIX}/chatroom/<id>", methods=['DELETE'])
 @jwt_required()
-def delete_room(id):
+def delete_room():
     logger.info("Delete a chatroom")
     session = Session()
 
@@ -220,20 +223,22 @@ def get_all_messages():
 
 
 @app.route(f"{PATH_PREFIX}/message/chatroom/<id>", methods=['GET'])
-@jwt_required(id)
+@jwt_required()
 def get_all_messages_from_chatroom(id):
     logger.info("Get all messages from specific chatroom")
     session = Session()
-    messages = session.query(Message).filter(ChatRoom.id == id).all()
+    messages = session.query(Message).filter(Message.room_id == id).all()
     return render_response(data=messages)
 
 
 @app.route(f"{PATH_PREFIX}/message/user/<id>", methods=['GET'])
-@jwt_required(id)
-def get_all_messages_from_user(id):
-    logger.info("Get all messages from specific user")
+@jwt_required()
+def get_all_messages_with_user(id):
+    logger.info("Get all messages from conversation with specific user")
+    user_id = current_identity.id
     session = Session()
-    messages = session.query(Message).filter(User.id == id).all()
+    messages = session.query(Message).filter(or_(and_(Message.recipient_id == id, Message.user_id == user_id),
+                                                 and_(Message.recipient_id == user_id, Message.user_id == id))).all()
     return render_response(data=messages)
 
 
@@ -254,12 +259,12 @@ def create_message():
 
     request_data = request.get_json()
 
-    user_id = request_data['user_id']
+    user_id = current_identity.id
     content = request_data['content']
-    room_id = request_data['room_id']
-    recipient_id = request_data['recipient_id']
+    room_id = request_data['room_id'] if 'room_id' in request_data else None
+    recipient_id = request_data['recipient_id'] if 'recipient_id' in request_data else None
 
-    new_message = Message(user_id=user_id, content=content, room_id=room_id, recipient_id=recipient_id)
+    new_message = Message(created_at=datetime.now(timezone.utc), updated_at=datetime.now(timezone.utc), user_id=user_id, content=content, room_id=room_id, recipient_id=recipient_id)
     session.add(new_message)
     session.commit()
     return render_response(data=new_message)
@@ -279,6 +284,10 @@ def static_file(path):
 @app.errorhandler(404)
 def not_found(e):
     return app.send_static_file('index.html')
+
+@app.teardown_appcontext
+def shutdown_session(exception=None):
+    Session.remove()
 
 
 if __name__ == '__main__':
