@@ -4,7 +4,7 @@ from flask_bcrypt import generate_password_hash
 from dataclasses import dataclass
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Float
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, deferred
 
 Base = declarative_base()
 

@@ -7,14 +7,8 @@ logger = logging.getLogger(__name__)
 
 
 def authenticate(username, password):
-    logger.info(username)
-    logger.info(password)
-
     session = main.Session()
     user = session.query(User).filter(User.username == username).one()
-
-    logger.info(user)
-    logger.info(user.password)
     if user and check_password_hash(user.password, password):
         return user
 
