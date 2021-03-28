@@ -61,13 +61,6 @@ users_schema = UserSchema(many=True)
 
 ### ROUTES ###
 
-
-# For React
-@api.route('/')
-def index():
-    return api.send_static_file('index.html')
-
-
 @api.route(f"user", methods=['GET'])
 @jwt_required()
 def get_all_users():
@@ -268,13 +261,3 @@ def delete_message(id):
 @jwt_required()
 def secret():
     return render_response("Secret!")
-
-
-@api.route('/<path:path>')
-def static_file(path):
-    return api.send_static_file(path)
-
-
-@api.errorhandler(404)
-def not_found(e):
-    return api.send_static_file('index.html')

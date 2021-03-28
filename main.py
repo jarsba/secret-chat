@@ -27,6 +27,22 @@ async_mode = None
 # Routes registered from sockets.py
 socketio = SocketIO(app, async_mode=async_mode, cors_allowed_origins="*")
 
+# For React
+@app.route('/')
+def index():
+    return app.send_static_file('index.html')
+
+
+@app.route('/<path:path>')
+def static_file(path):
+    return app.send_static_file(path)
+
+
+@app.errorhandler(404)
+def not_found(e):
+    return app.send_static_file('index.html')
+
+
 app.register_blueprint(api)
 
 app.debug = os.getenv('FLASK_ENV') != 'production'
