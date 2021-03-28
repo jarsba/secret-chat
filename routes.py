@@ -4,7 +4,7 @@ from flask_bcrypt import generate_password_hash
 from flask_cors import CORS
 import sqlalchemy
 from sqlalchemy import or_, and_
-from sqlalchemy.orm import sessionmaker, scoped_session, load_only
+from sqlalchemy.orm import sessionmaker, scoped_session, load_only, defer
 import logging
 import os
 from dotenv import load_dotenv
@@ -12,6 +12,8 @@ from datetime import timezone, datetime
 from models import User
 from models import ChatRoom
 from models import Message
+
+from mm_models import UserSchema
 
 FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 logging.basicConfig(format=FORMAT, level=logging.DEBUG)
@@ -52,6 +54,10 @@ def render_response(data="", status_code=200, message=""):
         'message': message
     })
 
+## MARSHMALLOW
+
+user_schema = UserSchema()
+users_schema = UserSchema(many=True)
 
 ### ROUTES ###
 
@@ -67,9 +73,9 @@ def index():
 def get_all_users():
     logger.info("Get all users")
     session = Session()
-    users = session.query(User.id, User.created_at, User.updated_at, User.email, User.username).all()
-    print(users)
-    return render_response(data=users)
+    users = session.query(User).all()
+    result = users_schema.dump(users)
+    return render_response(data=result)
 
 
 @api.route(f"user/<id>", methods=['GET'])
@@ -78,7 +84,8 @@ def get_user(id):
     logger.info("Get a user")
     session = Session()
     user = session.query(User).filter(User.id == id).one()
-    return render_response(data=user)
+    result = user_schema.dump(user)
+    return render_response(data=result)
 
 
 @api.route(f"user", methods=['POST'])
@@ -96,7 +103,8 @@ def create_user():
     new_user = User(email=email, username=username, password=password)
     session.add(new_user)
     session.commit()
-    return render_response(data=new_user)
+    result = user_schema.dump(new_user)
+    return render_response(data=result)
 
 
 @api.route(f"user/<id>", methods=['DELETE'])
@@ -136,7 +144,9 @@ def update_user(id):
 
     session.add(user)
     session.commit()
-    return render_response(data=user)
+
+    result = user_schema.dump(user)
+    return render_response(data=result)
 
 
 @api.route(f"chatroom", methods=['GET'])
